@@ -5,11 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Maquette Interactive - Tunnel</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body, html {
       width: 100%;
@@ -33,6 +29,7 @@
       height: 100%;
       object-fit: cover;
       display: block;
+      pointer-events: none;
     }
 
     .nav-btn {
@@ -44,35 +41,28 @@
       align-items: center;
       gap: 10px;
       padding: 12px 24px;
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.1);
       border-radius: 999px;
       color: #222;
       font-size: 14px;
       font-weight: 500;
-      letter-spacing: 0.3px;
       cursor: pointer;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-      transition: all 0.3s ease;
-      z-index: 10;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      transition: all 0.25s ease;
+      z-index: 999;
     }
 
     .nav-btn:hover {
       background: #ffffff;
       transform: translateX(-50%) translateY(-2px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
     }
 
     .nav-btn.hidden {
       opacity: 0;
       pointer-events: none;
       transform: translateX(-50%) translateY(10px);
-    }
-
-    .arrow {
-      font-size: 16px;
-      line-height: 1;
     }
   </style>
 </head>
@@ -81,15 +71,70 @@
   <div class="viewer">
     <video id="video" src="DSR_transi_01.mp4" muted playsinline preload="auto"></video>
 
-    <button id="btnForward" class="nav-btn">
+    <button id="btnForward" class="nav-btn" type="button">
       <span>Explorer le tunnel</span>
-      <span class="arrow">↑</span>
+      <span>↑</span>
     </button>
 
-    <button id="btnBack" class="nav-btn hidden">
-      <span class="arrow">←</span>
+    <button id="btnBack" class="nav-btn hidden" type="button">
+      <span>←</span>
       <span>Retour à l'entrée</span>
     </button>
   </div>
 
   <script>
+    const video = document.getElementById('video');
+    const btnForward = document.getElementById('btnForward');
+    const btnBack = document.getElementById('btnBack');
+    let isRewinding = false;
+
+    // Sécurité autoplay iframe
+    video.muted = true;
+
+    video.addEventListener('error', () => {
+      alert("Erreur : impossible de charger DSR_transi_01.mp4. Vérifie le nom exact du fichier sur GitHub.");
+    });
+
+    btnForward.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isRewinding) return;
+      btnForward.classList.add('hidden');
+      video.play().catch(err => {
+        console.error(err);
+        btnForward.classList.remove('hidden');
+      });
+    });
+
+    video.addEventListener('ended', () => {
+      btnBack.classList.remove('hidden');
+    });
+
+    btnBack.addEventListener('click', (e) => {
+      e.stopPropagation();
+      btnBack.classList.add('hidden');
+      isRewinding = true;
+      video.pause();
+
+      let lastTime = performance.now();
+
+      function rewindStep(now) {
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+
+        if (video.currentTime <= 0.03) {
+          video.currentTime = 0;
+          isRewinding = false;
+          btnForward.classList.remove('hidden');
+          return;
+        }
+
+        video.currentTime = Math.max(0, video.currentTime - dt);
+        requestAnimationFrame(rewindStep);
+      }
+
+      requestAnimationFrame(rewindStep);
+    });
+  </script>
+
+</body>
+</html>
